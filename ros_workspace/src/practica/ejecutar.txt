@@ -1,0 +1,5 @@
+python3 src/practica/practica1.py
+
+source /home/laboratorio/ros_workspace/install/setup.bash
+ros2 launch launcher_robots_lab_robotica sim_203.launch.py
+http://localhost:6081/

@@ -1,5 +1,4 @@
 #!/usr/bin/python3
-"hola"
 import threading
 import time
 from copy import deepcopy
