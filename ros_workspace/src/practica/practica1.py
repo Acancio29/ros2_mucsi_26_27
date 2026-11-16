@@ -3,7 +3,9 @@
 import rclpy
 from rclpy.node import Node
 from sensor_msgs.msg import JointState
+from collections import deque
 
+TAMANO_VENTANA_SUAVIZADO: int = 5
 TOPIC_ESTADO_ARTICULACIONES: str = "/joint_states"
 TAMANO_COLA: int = 10
 NANOSEGUNDOS_POR_SEGUNDO: float = 1e9
@@ -22,6 +24,11 @@ class SuscriptorArticulaciones(Node):
         self.create_subscription(
             JointState, TOPIC_ESTADO_ARTICULACIONES, self._callback, TAMANO_COLA
         )
+        self._filas: list[list[float]] = []
+        self._tiempo_inicial: float | None = None
+        self._tiempo_anterior: float | None = None
+        self._velocidad_anterior: list[float] | None = None
+        self._ventana_velocidades: deque[list[float]] = deque(maxlen=TAMANO_VENTANA_SUAVIZADO)
 
     def _callback(self, mensaje: JointState) -> None:
         """Lee las posiciones y velocidades del brazo en cada mensaje."""
@@ -38,7 +45,29 @@ class SuscriptorArticulaciones(Node):
         lista_posiciones = [posiciones[nombre] for nombre in ARTICULACIONES_BRAZO]
         lista_velocidades = [velocidades[nombre] for nombre in ARTICULACIONES_BRAZO]
 
-        print(tiempo, lista_posiciones, lista_velocidades)
+        if self._tiempo_inicial is None:
+            self._tiempo_inicial = tiempo
+        tiempo_relativo = tiempo - self._tiempo_inicial
+
+        # Un mensaje con un tiempo que no avanza daría una división entre 0 o negativa
+        if self._tiempo_anterior is not None and tiempo_relativo <= self._tiempo_anterior:
+            return
+
+        if self._tiempo_anterior is None or self._velocidad_anterior is None:
+            # Primer mensaje: no hay velocidad anterior con la que comparar
+            lista_aceleraciones = [0.0] * len(lista_velocidades)
+        else:
+            incremento_tiempo = tiempo_relativo - self._tiempo_anterior
+            lista_aceleraciones = [
+                (velocidad - anterior) / incremento_tiempo
+                for velocidad, anterior in zip(lista_velocidades, self._velocidad_anterior)
+            ]
+
+        self._filas.append(
+            [tiempo_relativo, *lista_posiciones, *lista_velocidades, *lista_aceleraciones]
+        )
+        self._tiempo_anterior = tiempo_relativo
+        self._velocidad_anterior = lista_velocidades
 
 
 def main() -> None:
