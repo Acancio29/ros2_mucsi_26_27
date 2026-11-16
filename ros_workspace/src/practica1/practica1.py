@@ -6,9 +6,11 @@ from collections import deque
 from pathlib import Path
 
 import rclpy
+from builtin_interfaces.msg import Time
 from rclpy.node import Node
 from sensor_msgs.msg import JointState
 from std_msgs.msg import String
+from ur3e_interfaces.msg import EstadoCinematico
 
 ARTICULACIONES_BRAZO: tuple[str, ...] = (
     "shoulder_pan_joint", "shoulder_lift_joint", "elbow_joint",
@@ -25,6 +27,7 @@ class SuscriptorArticulaciones(Node):
         super().__init__("suscriptor_articulaciones")
         self.create_subscription(JointState, "/joint_states", self._callback, 10)
         self.create_subscription(String, "/trayectoria_actual", self._callback_trayectoria, 10)
+        self._publicador_estado = self.create_publisher(EstadoCinematico, "/estado_cinematico", 10)
         self._trayectoria: str = ""
         self._reiniciar_datos()
 
@@ -60,6 +63,23 @@ class SuscriptorArticulaciones(Node):
             self.get_logger().info(f"Guardadas {len(self._filas)} muestras en {ruta}")
         self._trayectoria = ""
         self._reiniciar_datos()
+
+    def _publicar_estado(
+        self,
+        sello: Time,
+        posiciones: list[float],
+        velocidades: list[float],
+        aceleraciones: list[float],
+    ) -> None:
+        """Publica en un solo mensaje la posición, velocidad y aceleración calculadas."""
+        estado = EstadoCinematico()
+        estado.header.stamp = sello
+        estado.trayectoria = self._trayectoria
+        estado.nombres = list(ARTICULACIONES_BRAZO)
+        estado.posiciones = posiciones
+        estado.velocidades = velocidades
+        estado.aceleraciones = aceleraciones
+        self._publicador_estado.publish(estado)
 
     def _callback(self, mensaje: JointState) -> None:
         """Calcula y guarda posición, velocidad y aceleración del brazo."""
@@ -104,6 +124,9 @@ class SuscriptorArticulaciones(Node):
 
         self._filas.append(
             [tiempo_relativo, *lista_posiciones, *lista_velocidades, *lista_aceleraciones]
+        )
+        self._publicar_estado(
+            mensaje.header.stamp, lista_posiciones, lista_velocidades, lista_aceleraciones
         )
         self._tiempo_anterior = tiempo_relativo
         self._velocidad_anterior = velocidad_suavizada
