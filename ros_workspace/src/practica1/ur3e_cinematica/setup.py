@@ -20,6 +20,7 @@ setup(
     entry_points={
         'console_scripts': [
             'suscriptor_articulaciones = ur3e_cinematica.suscriptor_articulaciones:main',
+            'ejecutor_trayectorias = ur3e_cinematica.ejecutor_trayectorias:main',
         ],
     },
 )

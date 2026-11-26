@@ -25,7 +25,9 @@ ros2 topic echo /estado_cinematico
 # Ver el esquema de nodos y topics (comprobar que el suscriptor está conectado)
 rqt_graph
 
-
+# ------------------------------------
+# GENERAL
+# ------------------------------------
 
 # Compilar (desde ros_workspace)
 colcon build --packages-select ur3e_interfaces ur3e_cinematica
@@ -36,3 +38,6 @@ ros2 run ur3e_cinematica suscriptor_articulaciones
 
 # Terminal B: el que mueve (aquí pulsas las teclas)
 ros2 run ur3e_cinematica ejecutor_trayectorias
+
+# Los csv con las trayectorias se almacenan en:
+# /home/laboratorio/ros_workspace/datos_trayectorias/
