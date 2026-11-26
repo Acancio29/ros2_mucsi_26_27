@@ -5,7 +5,7 @@ package_name = 'ur3e_cinematica'
 setup(
     name=package_name,
     version='0.0.0',
-    packages=find_packages(exclude=['test']),
+    packages=find_packages(),
     data_files=[
         ('share/ament_index/resource_index/packages',
             ['resource/' + package_name]),
@@ -17,11 +17,6 @@ setup(
     maintainer_email='144768058+CarmeloValera@users.noreply.github.com',
     description='TODO: Package description',
     license='TODO: License declaration',
-    extras_require={
-        'test': [
-            'pytest',
-        ],
-    },
     entry_points={
         'console_scripts': [
             'suscriptor_articulaciones = ur3e_cinematica.suscriptor_articulaciones:main',

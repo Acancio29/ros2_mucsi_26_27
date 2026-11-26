@@ -1,14 +1,26 @@
-# Compilar el mensaje personalizado (desde ros_workspace, una vez o tras cambiar el .msg)
-colcon build --packages-select ur3e_interfaces
+cd ~/ros_workspace
+# Compilar el paquete del mensaje personalizado y el paquete del suscriptor
+colcon build --packages-select ur3e_interfaces ur3e_cinematica
+# Cargar los paquetes compilados (hacerlo en cada terminal nueva)
 source install/setup.bash
+
+ros2 launch launcher_robots_lab_robotica sim_203.launch.py
+
+# Lanzar el suscriptor en ~/ros_workspace/datos_trayectorias/
+ros2 run ur3e_cinematica suscriptor_articulaciones
+# Empezar a grabar una trayectoria con el nombre indicado
+ros2 topic pub --once /trayectoria_actual std_msgs/msg/String "{data: 'trayectoria1'}"
+
+# Mover el robot para que haya datos que procesar
+python3 ~/ros_workspace/src/practica1/prueba.py
+
+# Terminar la grabación y guardar datos_trayectorias/trayectoria1.csv
+ros2 topic pub --once /trayectoria_actual std_msgs/msg/String "{data: ''}"
+
+# Ver los campos del mensaje personalizado EstadoCinematico
 ros2 interface show ur3e_interfaces/msg/EstadoCinematico
-
-# Lanzar el nodo (en cada terminal nueva: source install/setup.bash)
-python3 src/practica1/practica1.py
-
-# Comprobar el mensaje publicado
+# Ver en vivo los mensajes con posición, velocidad y aceleración
 ros2 topic echo /estado_cinematico
 
-source /home/laboratorio/ros_workspace/install/setup.bash
-ros2 launch launcher_robots_lab_robotica sim_203.launch.py
-http://localhost:6081/
+# Ver el esquema de nodos y topics (comprobar que el suscriptor está conectado)
+rqt_graph
